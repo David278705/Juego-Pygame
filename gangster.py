@@ -49,9 +49,10 @@ class Gangster:
         self.vel_y = 0
         self.gravity = 0.9
         self.current_gravity = self.gravity
-        self.jump_strength = -11
-        self.is_jumping = False
+        self.jump_strength = -12
+        self.is_jumping = True
         self.is_jumping_animation = False
+        self.time_jump = 0
         self.facing_left = False  # Para saber si está mirando a la izquierda
         self.mask = pygame.mask.from_surface(self.run_images_right[0])  # Crear máscara inicial
 
@@ -70,7 +71,18 @@ class Gangster:
             self.is_jumping = True
             self.is_jumping_animation = True
             self.vel_y = self.jump_strength
-            self.current_gravity = self.gravity  # Gravedad estándar al saltar
+            self.current_gravity = self.gravity  # Gravedad estándar al saltar 
+        
+        # Doble salto
+        if keys[jump]:
+            self.time_jump += 1
+        else:
+            self.time_jump = 0
+        
+        if self.time_jump > 10 and self.time_jump < 60:
+            self.time_jump += 1
+            self.vel_y = self.jump_strength
+            self.current_gravity = self.gravity
 
     def apply_gravity(self):
         # Seleccionar el conjunto de imágenes correcto según el estado y la dirección

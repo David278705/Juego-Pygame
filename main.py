@@ -54,8 +54,8 @@ MAPA_NIVEL = [
     "    XXXXXXXXXXXXXXXXXXXXXX",
     "                          ",
     "                          ",
-    "   P                      ",
-    "XXXXXXXXXXXXXPPXXXXXXX    ",
+    "   P         PP           ",
+    "XXXXXXXXXXXXX  XXXXXXX    ",
     "                          ",
     "                          ",
     "         P         P      ",
@@ -75,8 +75,8 @@ def cargar_imagenes_personajes():
             (gangster2_run_images, gangster2_jump_images, gangster2_idle_images))
 
 def crear_instancias_personajes(gangster1_images, gangster2_images):
-    gangster1 = Gangster(50, 690, *gangster1_images)
-    gangster2 = Gangster(50, 690, *gangster2_images)
+    gangster1 = Gangster(50, 670, *gangster1_images)
+    gangster2 = Gangster(50, 670, *gangster2_images)
     return gangster1, gangster2
 
 def crear_elementos_nivel(mapa_nivel):
@@ -113,8 +113,6 @@ def determinar_tipo_plataforma(fila, col_indice):
         return 'center'
 
 def detectar_colision_con_plataformas(gangster, plataformas):
-    gangster.is_jumping = True
-
     if gangster.rect.left < 0:
         gangster.rect.left = 0
         gangster.vel_x = 0
@@ -128,6 +126,7 @@ def detectar_colision_con_plataformas(gangster, plataformas):
         gangster.rect.bottom = HEIGHT
         gangster.vel_y = 0
         gangster.is_jumping = False
+        gangster.time_jump = 0
 
     for plataforma in plataformas:
         plat_rect = plataforma['rect']
@@ -139,6 +138,7 @@ def manejar_colision_plataforma(gangster, plat_rect):
         gangster.rect.bottom = plat_rect.top
         gangster.vel_y = 0
         gangster.is_jumping = False
+        gangster.time_jump = 0
         gangster.is_jumping_animation = False
     elif gangster.vel_y < 0 and gangster.rect.top >= plat_rect.bottom - abs(gangster.vel_y):
         gangster.rect.top = plat_rect.bottom
@@ -158,6 +158,7 @@ def detectar_colision_con_pinchos(gangster, spikes):
         if gangster.mask.overlap(spike_mask, offset):
             gangster.rect.x = gangster.start_x
             gangster.rect.y = gangster.start_y
+            gangster.is_jumping = True
             break
 
 def detectar_colision_con_monedas(gangster, monedas):
