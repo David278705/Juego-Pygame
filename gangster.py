@@ -49,7 +49,7 @@ class Gangster:
         self.vel_y = 0
         self.gravity = 0.9
         self.current_gravity = self.gravity
-        self.jump_strength = -12
+        self.jump_strength = -7
         self.is_jumping = True
         self.is_jumping_animation = False
         self.time_jump = 0
@@ -65,13 +65,6 @@ class Gangster:
             self.facing_left = False
         else:
             self.vel_x = 0
-
-        # Saltar solo si no está ya en el aire
-        if keys[jump] and not self.is_jumping:
-            self.is_jumping = True
-            self.is_jumping_animation = True
-            self.vel_y = self.jump_strength
-            self.current_gravity = self.gravity  # Gravedad estándar al saltar 
         
         # Doble salto
         if keys[jump]:
@@ -79,8 +72,10 @@ class Gangster:
         else:
             self.time_jump = 0
         
-        if self.time_jump > 10 and self.time_jump < 60:
+        if self.time_jump > 3 and self.time_jump < 60:
             self.time_jump += 1
+            self.is_jumping = True
+            self.is_jumping_animation = True
             self.vel_y = self.jump_strength
             self.current_gravity = self.gravity
 
