@@ -52,6 +52,7 @@ platform_right_image = pygame.transform.scale(platform_right_image, (TAMANIO_CEL
 # Cargar y escalar la imagen de los pinchos
 spike_image = pygame.image.load('pinchos.png')
 spike_image = pygame.transform.scale(spike_image, (TAMANIO_CELDA, TAMANIO_CELDA))
+spike_mask = pygame.mask.from_surface(spike_image)  # Crear máscara para los pinchos
 
 # Definir el mapa del nivel
 mapa_nivel = [
@@ -104,7 +105,7 @@ for fila_indice, fila in enumerate(mapa_nivel):
             monedas.append(moneda)
         elif celda == 'P':  # Crear un pincho
             spike_rect = pygame.Rect(x, y + PLATFORM_HEIGHT, TAMANIO_CELDA, TAMANIO_CELDA)
-            spikes.append(spike_rect)
+            spikes.append({'rect': spike_rect, 'mask': spike_mask})
 
 # Función para manejar colisiones con plataformas
 def detectar_colision_con_plataformas(gangster):
@@ -151,8 +152,11 @@ def detectar_colision_con_plataformas(gangster):
 
 # Función para manejar colisiones con pinchos
 def detectar_colision_con_pinchos(gangster):
-    for spike_rect in spikes:
-        if gangster.rect.colliderect(spike_rect):
+    for spike in spikes:
+        spike_rect = spike['rect']
+        spike_mask = spike['mask']
+        offset = (spike_rect.x - gangster.rect.x, spike_rect.y - gangster.rect.y)
+        if gangster.mask.overlap(spike_mask, offset):
             # Reiniciar posición del personaje al inicio
             gangster.rect.x = gangster.start_x
             gangster.rect.y = gangster.start_y
@@ -214,7 +218,7 @@ while running:
         pygame.draw.ellipse(screen, (255, 215, 0), moneda)
 
     for spike_rect in spikes:
-        screen.blit(spike_image, spike_rect)
+        screen.blit(spike_image, spike_rect['rect'])
 
     # Dibujar personajes
     gangster1.draw(screen)

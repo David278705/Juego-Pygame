@@ -53,6 +53,7 @@ class Gangster:
         self.is_jumping = False
         self.is_jumping_animation = False
         self.facing_left = False  # Para saber si está mirando a la izquierda
+        self.mask = pygame.mask.from_surface(self.run_images_right[0])  # Crear máscara inicial
 
     def move(self, keys, left, right, jump):
         if keys[left]:
@@ -90,6 +91,10 @@ class Gangster:
             self.vel_y += self.current_gravity
         else:
             self.vel_y = 0
+
+        # Actualizar la máscara según la imagen actual
+        current_image = self.current_images[int(self.image_index)]
+        self.mask = pygame.mask.from_surface(current_image)
 
     def update(self):
         self.rect.x += self.vel_x
