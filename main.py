@@ -38,23 +38,27 @@ spike_image = pygame.image.load('pinchos.png')
 spike_image = pygame.transform.scale(spike_image, (TAMANIO_CELDA, TAMANIO_CELDA))
 spike_mask = pygame.mask.from_surface(spike_image)
 
+# Cargar y escalar la imagen de la puerta
+door_image = pygame.image.load('door.png')
+door_image = pygame.transform.scale(door_image, (TAMANIO_CELDA * 3, TAMANIO_CELDA * 3))
+
 # Definir el mapa del nivel
 MAPA_NIVEL = [
+    "                      W   ",
     "                          ",
-    "                          ",
-    "             P            ",
+    "          P               ",
     "    XXXXXXXXXXXXXXXXXXXXXX",
     "                          ",
     "                          ",
-    "      P          P        ",
+    "       P       P          ",
     "XXXXXXXXXXXXXXXXXXXXXX    ",
     "                          ",
     "                          ",
-    "          P          P    ",
+    "           P          P   ",
     "    XXXXXXXXXXXXXXXXXXXXXX",
     "                          ",
     "                          ",
-    "   P         PP           ",
+    "    P        PP           ",
     "XXXXXXXXXXXXX  XXXXXXX    ",
     "                          ",
     "                          ",
@@ -76,13 +80,16 @@ def cargar_imagenes_personajes():
 
 def crear_instancias_personajes(gangster1_images, gangster2_images):
     gangster1 = Gangster(50, 670, *gangster1_images)
+    gangster1.idle_images = gangster1_images[2]  # Ensure idle_images attribute is set
     gangster2 = Gangster(50, 670, *gangster2_images)
+    gangster2.idle_images = gangster2_images[2]  # Ensure idle_images attribute is set
     return gangster1, gangster2
 
 def crear_elementos_nivel(mapa_nivel):
     plataformas = []
     monedas = []
     spikes = []
+    door = None
 
     for fila_indice, fila in enumerate(mapa_nivel):
         for col_indice, celda in enumerate(fila):
@@ -98,8 +105,10 @@ def crear_elementos_nivel(mapa_nivel):
             elif celda == 'P':
                 spike_rect = pygame.Rect(x, y + PLATFORM_HEIGHT, TAMANIO_CELDA, TAMANIO_CELDA)
                 spikes.append({'rect': spike_rect, 'mask': spike_mask})
+            elif celda == 'W':
+                door = pygame.Rect(x, y, TAMANIO_CELDA * 2, TAMANIO_CELDA * 2)
 
-    return plataformas, monedas, spikes
+    return plataformas, monedas, spikes, door
 
 def determinar_tipo_plataforma(fila, col_indice):
     if col_indice == 0 or fila[col_indice - 1] != 'X':
@@ -166,6 +175,39 @@ def detectar_colision_con_monedas(gangster, monedas):
         if gangster.rect.colliderect(moneda):
             monedas.remove(moneda)
 
+def detectar_colision_con_puerta(gangster, door):
+    if door and gangster.rect.colliderect(door):
+        return True
+    return False
+
+def show_winner(screen, gangster, idle_image):
+    font = pygame.font.Font(None, 74)
+    winner_text = font.render(f'{gangster} Wins!', True, WHITE)
+    winner_rect = winner_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 100))
+
+    replay_text = font.render('Replay', True, WHITE)
+    main_menu_text = font.render('Main Menu', True, WHITE)
+    replay_rect = replay_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 50))
+    main_menu_rect = main_menu_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 150))
+
+    screen.fill(BLACK)
+    screen.blit(winner_text, winner_rect)
+    screen.blit(idle_image, (WIDTH // 2 - idle_image.get_width() // 2, HEIGHT // 2 - idle_image.get_height() // 2 - 50))
+    screen.blit(replay_text, replay_rect)
+    screen.blit(main_menu_text, main_menu_rect)
+    pygame.display.flip()
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if replay_rect.collidepoint(event.pos):
+                    return 'replay'
+                elif main_menu_rect.collidepoint(event.pos):
+                    return 'main_menu'
+
 def show_pause_menu(screen):
     font = pygame.font.Font(None, 74)
     resume_text = font.render('Resume', True, WHITE)
@@ -198,22 +240,22 @@ def show_pause_menu(screen):
                     return 'main_menu'
 
 def main():
-    running = True
-    while running:
+    while True:
         show_main_menu(screen, background_image)
         gangster1_images, gangster2_images = cargar_imagenes_personajes()
         gangster1, gangster2 = crear_instancias_personajes(gangster1_images, gangster2_images)
-        plataformas, monedas, spikes = crear_elementos_nivel(MAPA_NIVEL)
+        plataformas, monedas, spikes, door = crear_elementos_nivel(MAPA_NIVEL)
         paused = False
+        running = True
 
-        while not paused:
+        while running:
             clock.tick(60)
             screen.fill(WHITE)
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    running = False
-                    paused = True
+                    pygame.quit()
+                    exit()
                 elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                     paused = True
 
@@ -234,7 +276,40 @@ def main():
             detectar_colision_con_monedas(gangster2, monedas)
             gangster2.update()
 
-            dibujar_elementos(screen, plataformas, monedas, spikes, gangster1, gangster2)
+            if detectar_colision_con_puerta(gangster1, door):
+                action = show_winner(screen, "Gangster 1", gangster1.idle_images[0])
+                if action == 'replay':
+                    gangster1.rect.x = gangster1.start_x
+                    gangster1.rect.y = gangster1.start_y
+
+                    gangster2.rect.x = gangster2.start_x
+                    gangster2.rect.y = gangster2.start_y
+
+                    gangster1.is_jumping = True
+                    gangster1.time_jump = 0
+
+                    gangster2.is_jumping = True
+                    gangster2.time_jump = 0
+                elif action == 'main_menu':
+                    running = False
+            elif detectar_colision_con_puerta(gangster2, door):
+                action = show_winner(screen, "Gangster 2", gangster2.idle_images[0])
+                if action == 'replay':
+                    angster1.rect.x = gangster1.start_x
+                    gangster1.rect.y = gangster1.start_y
+
+                    gangster2.rect.x = gangster2.start_x
+                    gangster2.rect.y = gangster2.start_y
+
+                    gangster1.is_jumping = True
+                    gangster1.time_jump = 0
+
+                    gangster2.is_jumping = True
+                    gangster2.time_jump = 0
+                elif action == 'main_menu':
+                    running = False
+
+            dibujar_elementos(screen, plataformas, monedas, spikes, door, gangster1, gangster2)
             pygame.display.flip()
 
             if paused:
@@ -242,11 +317,12 @@ def main():
                 if action == 'resume':
                     paused = False
                 elif action == 'main_menu':
+                    running = False
                     break
 
     pygame.quit()
 
-def dibujar_elementos(screen, plataformas, monedas, spikes, gangster1, gangster2):
+def dibujar_elementos(screen, plataformas, monedas, spikes, door, gangster1, gangster2):
     for plataforma in plataformas:
         plat_rect = plataforma['rect']
         tipo = plataforma['type']
@@ -264,6 +340,9 @@ def dibujar_elementos(screen, plataformas, monedas, spikes, gangster1, gangster2
 
     for spike_rect in spikes:
         screen.blit(spike_image, spike_rect['rect'])
+
+    if door:
+        screen.blit(door_image, door.topleft)
 
     gangster1.draw(screen)
     gangster2.draw(screen)
