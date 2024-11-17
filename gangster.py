@@ -47,9 +47,9 @@ class Gangster:
         self.start_y = y
         self.vel_x = 0
         self.vel_y = 0
-        self.gravity = 0.4
+        self.gravity = 0.9
         self.current_gravity = self.gravity
-        self.jump_strength = -20
+        self.jump_strength = -11
         self.is_jumping = False
         self.is_jumping_animation = False
         self.facing_left = False  # Para saber si está mirando a la izquierda
