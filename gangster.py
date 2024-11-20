@@ -47,12 +47,14 @@ class Gangster:
         self.start_y = y
         self.vel_x = 0
         self.vel_y = 0
-        self.gravity = 0.4
+        self.gravity = 0.9
         self.current_gravity = self.gravity
-        self.jump_strength = -20
-        self.is_jumping = False
+        self.jump_strength = -7
+        self.is_jumping = True
         self.is_jumping_animation = False
+        self.time_jump = 0
         self.facing_left = False  # Para saber si está mirando a la izquierda
+        self.mask = pygame.mask.from_surface(self.run_images_right[0])  # Crear máscara inicial
 
     def move(self, keys, left, right, jump):
         if keys[left]:
@@ -63,13 +65,19 @@ class Gangster:
             self.facing_left = False
         else:
             self.vel_x = 0
-
-        # Saltar solo si no está ya en el aire
-        if keys[jump] and not self.is_jumping:
+        
+        # Doble salto
+        if keys[jump]:
+            self.time_jump += 1
+        else:
+            self.time_jump = 0
+        
+        if self.time_jump > 3 and self.time_jump < 60:
+            self.time_jump += 1
             self.is_jumping = True
             self.is_jumping_animation = True
             self.vel_y = self.jump_strength
-            self.current_gravity = self.gravity  # Gravedad estándar al saltar
+            self.current_gravity = self.gravity
 
     def apply_gravity(self):
         # Seleccionar el conjunto de imágenes correcto según el estado y la dirección
@@ -90,6 +98,10 @@ class Gangster:
             self.vel_y += self.current_gravity
         else:
             self.vel_y = 0
+
+        # Actualizar la máscara según la imagen actual
+        current_image = self.current_images[int(self.image_index)]
+        self.mask = pygame.mask.from_surface(current_image)
 
     def update(self):
         self.rect.x += self.vel_x
