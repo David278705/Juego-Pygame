@@ -23,6 +23,11 @@ clock = pygame.time.Clock()
 background_image = pygame.image.load("./bg.jpg")
 background_image = pygame.transform.scale(background_image, (WIDTH, HEIGHT))
 
+# Cargar y escalar la imagen de la pistola
+gun_image = pygame.image.load('./pistola.png')
+gun_image = pygame.transform.scale(gun_image, (TAMANIO_CELDA, TAMANIO_CELDA))
+
+
 # Cargar las imágenes de las plataformas y escalarlas
 platform_left_image = pygame.image.load('platform/platform-left.png')
 platform_left_image = pygame.transform.scale(platform_left_image, (TAMANIO_CELDA, PLATFORM_HEIGHT))
@@ -50,7 +55,7 @@ MAPA_NIVEL = [
     "    XXXXXXXXXXXXXXXXXXXXXX",
     "                          ",
     "                          ",
-    "       P       P          ",
+    "G      P       P          ",  # Añadimos la pistola aquí
     "XXXXXXXXXXXXXXXXXXXXXX    ",
     "                          ",
     "                          ",
@@ -65,6 +70,7 @@ MAPA_NIVEL = [
     "         P         P      ",
     "XXXXXXXXXXXXXXXXXXXXXXXXXXX",
 ]
+
 
 def cargar_imagenes_personajes():
     gangster1_run_images = load_images_from_folder('./gangster_1/run')
@@ -89,6 +95,8 @@ def crear_elementos_nivel(mapa_nivel):
     plataformas = []
     monedas = []
     spikes = []
+    guns = []  # Lista para almacenar las pistolas
+
     door = None
 
     for fila_indice, fila in enumerate(mapa_nivel):
@@ -107,8 +115,13 @@ def crear_elementos_nivel(mapa_nivel):
                 spikes.append({'rect': spike_rect, 'mask': spike_mask})
             elif celda == 'W':
                 door = pygame.Rect(x, y, TAMANIO_CELDA * 2, TAMANIO_CELDA * 2)
+            elif celda == 'G':
+                gun_rect = pygame.Rect(x, y, TAMANIO_CELDA, TAMANIO_CELDA)
+                gun = {'rect': gun_rect, 'cooldown': 0}
+                guns.append(gun)
 
-    return plataformas, monedas, spikes, door
+
+    return plataformas, monedas, spikes, guns, door
 
 def determinar_tipo_plataforma(fila, col_indice):
     if col_indice == 0 or fila[col_indice - 1] != 'X':
@@ -262,12 +275,28 @@ def show_pause_menu(screen):
                 elif main_menu_rect.collidepoint(event.pos):
                     return 'main_menu'
 
+class Bullet:
+    def __init__(self, x, y, direction):
+        self.image = pygame.Surface((10, 10))  # Pequeña bola amarilla
+        self.image.fill((255, 255, 0))  # Color amarillo
+        self.rect = self.image.get_rect()
+        self.rect.center = (x, y)
+        self.vel_x = direction * 3  # Velocidad lenta
+
+    def update(self):
+        self.rect.x += self.vel_x
+
+    def draw(self, screen):
+        screen.blit(self.image, self.rect)
+
+
 def main():
     while True:
         show_main_menu(screen, background_image)
         gangster1_images, gangster2_images = cargar_imagenes_personajes()
         gangster1, gangster2 = crear_instancias_personajes(gangster1_images, gangster2_images)
-        plataformas, monedas, spikes, door = crear_elementos_nivel(MAPA_NIVEL)
+        plataformas, monedas, spikes, guns, door = crear_elementos_nivel(MAPA_NIVEL)
+        bullets = []  # Lista para almacenar las balas
         paused = False
         running = True
 
@@ -298,6 +327,37 @@ def main():
             detectar_colision_con_pinchos(gangster2, spikes)
             detectar_colision_con_monedas(gangster2, monedas)
             gangster2.update()
+
+
+            # Manejo de las pistolas y las balas
+            for gun in guns:
+                if gun['cooldown'] > 0:
+                    gun['cooldown'] -= 1
+                else:
+                    bullet_x = gun['rect'].centerx
+                    bullet_y = gun['rect'].centery
+                    bullet = Bullet(bullet_x, bullet_y, direction=1)  # Dirección hacia la derecha
+                    bullets.append(bullet)
+                    gun['cooldown'] = 120  # Dispara cada 2 segundos
+
+            # Actualizar y dibujar las balas
+            for bullet in bullets[:]:
+                bullet.update()
+                if bullet.rect.x > WIDTH or bullet.rect.x < 0:
+                    bullets.remove(bullet)
+                else:
+                    # Colisión con los jugadores
+                    if bullet.rect.colliderect(gangster1.rect):
+                        gangster1.rect.x = gangster1.start_x
+                        gangster1.rect.y = gangster1.start_y
+                        gangster1.is_jumping = True
+                        bullets.remove(bullet)
+                    elif bullet.rect.colliderect(gangster2.rect):
+                        gangster2.rect.x = gangster2.start_x
+                        gangster2.rect.y = gangster2.start_y
+                        gangster2.is_jumping = True
+                        bullets.remove(bullet)
+
 
             if detectar_colision_con_puerta(gangster1, door):
                 action = show_winner(screen, "Gangster 1", gangster1.idle_images[0])
@@ -332,7 +392,8 @@ def main():
                 elif action == 'main_menu':
                     running = False
 
-            dibujar_elementos(screen, plataformas, monedas, spikes, door, gangster1, gangster2)
+            dibujar_elementos(screen, plataformas, monedas, spikes, guns, bullets, door, gangster1, gangster2)
+
             pygame.display.flip()
 
             if paused:
@@ -345,7 +406,7 @@ def main():
 
     pygame.quit()
 
-def dibujar_elementos(screen, plataformas, monedas, spikes, door, gangster1, gangster2):
+def dibujar_elementos(screen, plataformas, monedas, spikes, guns, bullets, door, gangster1, gangster2):
     for plataforma in plataformas:
         plat_rect = plataforma['rect']
         tipo = plataforma['type']
@@ -363,6 +424,13 @@ def dibujar_elementos(screen, plataformas, monedas, spikes, door, gangster1, gan
 
     for spike_rect in spikes:
         screen.blit(spike_image, spike_rect['rect'])
+
+    for gun in guns:
+        screen.blit(gun_image, gun['rect'].topleft)
+
+    for bullet in bullets:
+        bullet.draw(screen)
+
 
     if door:
         screen.blit(door_image, door.topleft)
