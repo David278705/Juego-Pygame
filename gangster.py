@@ -71,13 +71,14 @@ class Gangster:
             self.time_jump += 1
         else:
             self.time_jump = 0
-        
         if self.time_jump > 3 and self.time_jump < 60:
             self.time_jump += 1
             self.is_jumping = True
             self.is_jumping_animation = True
             self.vel_y = self.jump_strength
             self.current_gravity = self.gravity
+
+
 
     def apply_gravity(self):
         # Seleccionar el conjunto de imágenes correcto según el estado y la dirección

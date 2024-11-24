@@ -1,6 +1,8 @@
+# main_menu.py
+
 import pygame
 
-def show_main_menu(screen, background_image):
+def show_main_menu(screen, background_image, click_sound):
     # Fuente y tamaño para el título y los botones
     font_title = pygame.font.Font(None, 80)
     font_button = pygame.font.Font(None, 50)
@@ -9,8 +11,12 @@ def show_main_menu(screen, background_image):
     WHITE = (255, 255, 255)
     BLACK = (0, 0, 0)
 
+    # Cargar y reproducir la música del menú principal
+    pygame.mixer.music.load('./main-menu.mp3')
+    pygame.mixer.music.play(-1)  # Reproducir en bucle
+
     # Crear título y botones
-    title_text = font_title.render("Gangster Levels", True, WHITE)
+    title_text = font_title.render("Jumping Gangster Levels", True, WHITE)
     button_text_play = font_button.render("Play", True, WHITE)
     button_text_help = font_button.render("Help", True, WHITE)
     button_text_exit = font_button.render("Salir", True, WHITE)
@@ -43,17 +49,20 @@ def show_main_menu(screen, background_image):
                 exit()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if button_rect_play.collidepoint(event.pos):
+                    click_sound.play()
                     return  # Salir del menú y continuar con el juego
                 elif button_rect_help.collidepoint(event.pos):
-                    show_help_menu(screen, background_image)  # Mostrar menú de ayuda
+                    click_sound.play()
+                    show_help_menu(screen, background_image, click_sound)  # Pasar click_sound
                 elif button_rect_exit.collidepoint(event.pos):
+                    click_sound.play()
                     pygame.quit()
                     exit()
 
         # Actualizar pantalla
         pygame.display.flip()
 
-def show_help_menu(screen, background_image):
+def show_help_menu(screen, background_image, click_sound):
     # Fuente y tamaño para el texto de ayuda y el botón de volver
     font_help = pygame.font.Font(None, 40)
     font_button = pygame.font.Font(None, 50)
@@ -65,16 +74,17 @@ def show_help_menu(screen, background_image):
     # Crear texto de ayuda y botón de volver
     help_text_lines = [
         "Instrucciones del juego:",
-        "1. Usa las flechas del teclado para moverte.",
-        "2. Presiona la barra espaciadora para disparar.",
+        "1. Usa las teclas A/D o Flechas Izquierda/Derecha para moverte.",
+        "2. Presiona W o Flecha Arriba para saltar.",
         "3. Evita los obstáculos y enemigos.",
-        "4. Recoge objetos para ganar puntos."
+        "4. Dispara con la pistola para eliminar enemigos.",
+        "5. Recoge objetos para ganar puntos."
     ]
     help_texts = [font_help.render(line, True, WHITE) for line in help_text_lines]
     button_text_back = font_button.render("Volver", True, WHITE)
     
     # Obtener rectángulos para centrar el texto de ayuda y el botón de volver
-    help_text_rects = [text.get_rect(center=(screen.get_width() // 2, screen.get_height() // 4 + i * 40)) for i, text in enumerate(help_texts)]
+    help_text_rects = [text.get_rect(center=(screen.get_width() // 2, screen.get_height() // 4 + i * 50)) for i, text in enumerate(help_texts)]
     button_rect_back = button_text_back.get_rect(center=(screen.get_width() // 2, screen.get_height() // 1.1))
     
     # Bucle de la pantalla del menú de ayuda
@@ -96,6 +106,7 @@ def show_help_menu(screen, background_image):
                 exit()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if button_rect_back.collidepoint(event.pos):
+                    click_sound.play()
                     return  # Volver al menú principal
 
         # Actualizar pantalla
