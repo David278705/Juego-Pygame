@@ -143,8 +143,21 @@ def generar_mapa_random():
                 if cell_above == ' ':
                     posiciones_sobre_X.append((row_idx - 1, col_idx))
     
+    # Posición de aparición de los jugadores en términos de índices de mapa
+    spawn_positions = [(16, 1)]  # Lista de posiciones de spawn
+
+    # Define un área de exclusión (por ejemplo, un rectángulo alrededor del spawn)
+    def esta_cerca_de_spawn(pos, spawn_positions, rango_x=3, rango_y=3):
+        for spawn in spawn_positions:
+            if abs(pos[0] - spawn[0]) <= rango_y and abs(pos[1] - spawn[1]) <= rango_x:
+                return True
+        return False
+
     # Excluir posiciones cercanas al spawn de los jugadores
-    posiciones_sobre_X = [pos for pos in posiciones_sobre_X if pos not in spawn_positions]
+    posiciones_sobre_X = [
+        pos for pos in posiciones_sobre_X 
+        if not esta_cerca_de_spawn(pos, spawn_positions)
+]
     
     # Excluir la primera fila
     posiciones_sobre_X = [pos for pos in posiciones_sobre_X if pos[0] > 0]
